@@ -1,0 +1,10 @@
+[
+  {
+    "host": "http://bbb1.schule.de",
+    "secret": "secret_string"
+  },
+  {
+    "host": "http://bbb2.schule.de",
+    "secret": "secret_string"
+  }
+]
