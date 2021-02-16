@@ -16,6 +16,7 @@ export class BBB {
     this.params = this.query.replace(/[?|&]checksum.*$/, '')
     this.meeting_id = req.query.meetingID
     this.url = req.originalUrl
+    console.log(`New call to ${this.call}`)
   }
   // generate a checksum for various calls
   generate_checksum = (secret: string, call: string = this.call, params: string = this.params) => {
@@ -36,6 +37,7 @@ export class BBB {
   // check if request is autheticated with correct checksum
   authenticated = (secret: string) => {
     const checksum = this.generate_checksum(secret)
+    console.log(`Rejected incoming call to ${this.call}`)
     return checksum === this.checksum_incoming
   }
   find_meeting_id = (servers: server[]): Promise<server> => {

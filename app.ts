@@ -20,7 +20,7 @@ function get_available_server(): server {
     iterator = servers[Symbol.iterator]()
     candidate = iterator.next()
   }
-  console.log(`Using next server ${candidate.value}`)
+  console.log(`Using next server ${candidate.value.host}`)
   return candidate.value;
 }
 
@@ -30,15 +30,14 @@ router.get("/bigbluebutton/api/:call", async (req, res, next) => {
   const handler = new BBB(req)
   if (!handler.authenticated(secret)) {
     res.setStatus(401).end()
-    console.log(`rejected incoming call to ${req.params.call}`)
     return
   }
   let server: server
   try {
     server = await handler.find_meeting_id(servers)
   } catch (e) {
-    server = get_available_server()
     console.log(`Found no server with Meeting ID ${handler.meeting_id}`)
+    server = get_available_server()
   }
   console.log(`Redirecting to ${server.host}`)
   res.redirect(handler.rewritten_query(server))
