@@ -37,8 +37,9 @@ export class BBB {
   // check if request is autheticated with correct checksum
   authenticated = (secret: string) => {
     const checksum = this.generate_checksum(secret)
-    console.log(`Rejected incoming call to ${this.call}`)
-    return checksum === this.checksum_incoming
+    const ok = checksum === this.checksum_incoming
+    if (!ok) console.log(`Rejected incoming call to ${this.call}`)
+    return ok
   }
   find_meeting_id = (servers: server[]): Promise<server> => {
     if (!this.meeting_id) throw Error
