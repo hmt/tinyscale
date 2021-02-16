@@ -15,5 +15,6 @@ export type {
   Request,
   ParamsDictionary
  } from "https://deno.land/x/opine@1.1.0/mod.ts";
+export interface server { host: string; secret: string };
 export { createError } from "https://deno.land/x/http_errors@2.1.0/mod.ts";
 export { renderFileToString } from "https://deno.land/x/dejs@0.9.3/mod.ts";
