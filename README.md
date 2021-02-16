@@ -15,7 +15,7 @@ Then clone this repository:
 edit servers.json (there is a servers.json.example) to your needs
 and then start the script with a free port and a secret:
     
-    PORT=3005 TINYSCALE_SECRET=some_secret_string deno run --allow-net --allow-read --allow-env --unstable mod.ts
+    PORT=3005 TINYSCALE_SECRET=some_secret_string deno run --allow-net --allow-read --allow-env mod.ts
 
 Now tinyscales runs on port 3005 and you will have to set up your reverse proxy so that it can pick up requests or you leave it on that port.
 
