@@ -1,7 +1,7 @@
 import app from "./app.ts";
 
 // Get the PORT from the environment variables and store in Opine.
-const port = parseInt(Deno.env.get("PORT") ?? "3000");
+const port = parseInt(Deno.env.get("PORT") ?? "3005");
 app.set("port", port);
 
 // Get the DENO_ENV from the environment variables and store in Opine.
