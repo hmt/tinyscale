@@ -26,7 +26,7 @@ function get_available_server(): server {
 
 const router = Router()
 // the api itself answering to every call
-router.get("/bigbluebutton/api/:call", async (req, res, next) => {
+router.all("/bigbluebutton/api/:call", async (req, res, next) => {
   const handler = new BBB(req)
   if (!handler.authenticated(secret)) {
     res.setStatus(401).end()
@@ -53,14 +53,11 @@ router.get("/bigbluebutton/api", (req, res, next) => {
 })
 
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  // Set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
-  // Render the error page
   res.setStatus(err.status ?? 500);
-  console.log(err, req)
-  res.send(err);
+  console.log(res.status, req.originalUrl)
+  res.end();
 };
+
 const app = opine()
             .use("/", router)
             .use((req, res, next) => { next(createError(404)); })
