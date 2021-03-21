@@ -24,17 +24,15 @@ Then create a `servers.json` file like this here:
 
 Now you are ready to start the script with setting a port and a secret:
     
-    PORT=3005 TINYSCALE_SECRET=some_secret_string deno run --allow-net --allow-read --allow-env https://deno.land/x/tinyscale@v1.0.0/mod.ts
+    TINYSCALE_SECRET=some_secret_string deno run --allow-net --allow-read --allow-env https://deno.land/x/tinyscale@v1.1.0/mod.ts
 
-tinyscales then runs on port 3005 and you will have to set up your reverse proxy so that it can pick up requests or you leave it on that port.
+tinyscales then runs on port 3005 and you will have to set up your reverse proxy so that it can pick up requests or you leave it on that port. If you prefer a different port you can set one with another env-var: `PORT 3006`
 
 Next you replace your existing BBB settings with the new tinyscale url in your third party apps.
 
 tinyscale has been tested to work with NextCloud and Moodle.
 
 If you want to use recordings they will work but you cannot get a list of all recordings. tinyscale will only respond with the next available server since it is a call to bbb without a `meetingID`. The same goes for the call to get infos on all meetings.
-
-__This is alpha software. Use at your own risk.__
 
 MIT Licensed
 ___
