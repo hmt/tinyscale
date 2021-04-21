@@ -1,5 +1,4 @@
-import { createError, opine } from "./deps.ts";
-import { ErrorRequestHandler, Router, server } from "./deps.ts";
+import { createError, opine, ErrorRequestHandler, Router, server } from "./deps.ts";
 import { BBB } from './bbb.ts';
 
 // give your tinyscale server a secret so it looks like a BBB server
@@ -9,7 +8,7 @@ if (!secret) throw "No secret set for tinyscale"
 // store your BBB servers in servers.json
 const file: string = await Deno.readTextFile('servers.json')
 const servers: server[] = JSON.parse(file)
-// create an iterator so that we can trat all servers equally
+// create an iterator so that we can treat all servers equally
 let iterator = servers[Symbol.iterator]();
 console.log(servers)
 

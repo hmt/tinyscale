@@ -1,5 +1,4 @@
-import { Request, ParamsDictionary, server } from "./deps.ts";
-import { createHash } from "https://deno.land/std@0.87.0/hash/mod.ts";
+import { Request, ParamsDictionary, server, createHash } from "./deps.ts";
 
 export class BBB {
   call: string
