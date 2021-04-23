@@ -1,4 +1,4 @@
-import { createError, opine, ErrorRequestHandler, Router, server } from "./deps.ts";
+import { createError, opine, ErrorRequestHandler, Router, server, createHash } from "./deps.ts";
 import { BBB } from './bbb.ts';
 
 // give your tinyscale server a secret so it looks like a BBB server
@@ -11,6 +11,25 @@ const servers: server[] = JSON.parse(file)
 // create an iterator so that we can treat all servers equally
 let iterator = servers[Symbol.iterator]();
 console.log(servers)
+console.log('Checking servers first …')
+// check servers for connectivity and if the secret is correct
+servers.forEach(async s => {
+  const hash = createHash("sha1");
+  hash.update(`getMeetings${s.secret}`)
+  try {
+    // throw an error if cannot connect or if secret fails
+    const res = await fetch(`${s.host}/bigbluebutton/api/getMeetings?checksum=${hash.toString()}`)
+    if (!res.ok) throw "Connection error. Please check your host configuration"
+    const body = await res.text()
+    const ok = body.includes('SUCCESS')
+    console.log(`${s.host} is ${ok ? 'ok':'misconfigured. Please check your secret in servers.json'}`)
+    if (!ok) throw "Configuration error. Exiting …"
+  } catch (e) {
+    // exit tinyscale if an error is encountered in servers.json
+    console.log(e)
+    Deno.exit(1);
+  }
+})
 
 // pick the next server, using an iterator to cycle through all servers available
 function get_available_server(): server {
