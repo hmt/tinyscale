@@ -2,8 +2,9 @@ import { opine, ErrorRequestHandler, Router, createHash, server, createError, Co
 import { BBB } from './bbb.ts';
 
 const date = () => new Date().toLocaleTimeString('de')
-const VERSION = 'v1.3.0'
-console.log(date() + Color.green(` Starting tinyscale ${VERSION}`))
+const VERSION = 'v1.4.0'
+const tinyscale_strict: boolean = Deno.env.get("TINYSCALE_STRICT") === 'true'|| '1' ? true : false
+console.log(date() + Color.green(` Starting tinyscale ${VERSION} in ${tinyscale_strict ? 'strict':'loose'} mode`))
 // give your tinyscale server a secret so it looks like a BBB server
 const secret = Deno.env.get("TINYSCALE_SECRET") || ""
 if (!secret) throw "No secret set for tinyscale"
@@ -33,6 +34,8 @@ servers.forEach(async s => {
     Deno.exit(1);
   }
 })
+let current_server: server
+get_available_server()
 // pick the next server, using an iterator to cycle through all servers available
 function get_available_server(): server {
   let candidate = iterator.next()
@@ -41,7 +44,8 @@ function get_available_server(): server {
     candidate = iterator.next()
   }
   console.log(`Using next server ${Color.green(candidate.value.host)}`)
-  return candidate.value;
+  current_server = candidate.value;
+  return current_server
 }
 
 const router = Router()
@@ -59,7 +63,8 @@ router.all("/:call", async (req, res, next) => {
     server = await handler.find_meeting_id(servers)
   } catch (e) {
     console.log(`Found no server with Meeting ID ${Color.yellow(handler.meeting_id)}`)
-    server = get_available_server()
+    if (handler.call === 'create' && tinyscale_strict) get_available_server()
+    server = current_server
   }
   console.log(`Redirecting to ${server.host}`)
   const redirect = handler.rewritten_query(server)
