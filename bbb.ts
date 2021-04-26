@@ -1,4 +1,4 @@
-import { Request, ParamsDictionary, server, createHash } from "./deps.ts";
+import { Request, ParamsDictionary,  createHash, server } from "./deps.ts";
 
 export class BBB {
   call: string
@@ -12,10 +12,9 @@ export class BBB {
     this.call = req.params.call
     this.checksum_incoming = req.query.checksum
     this.query = req._parsedUrl?.query || ""
-    this.params = this.query.replace(/[?|&]checksum.*$/, '')
+    this.params = this.query.replace(/[?&]?checksum.*$/, '')
     this.meeting_id = req.query.meetingID
     this.url = req.originalUrl
-    console.log(`New call to ${this.call}`)
   }
   // generate a checksum for various calls
   generate_checksum = (secret: string, call: string = this.call, params: string = this.params) => {
@@ -31,13 +30,12 @@ export class BBB {
   // write new query for target bbb server
   rewritten_query = (server: server) => {
     const checksum_outgoing = this.generate_checksum(server.secret)
-    return `${server.host}/${this.url.replace(this.checksum_incoming, checksum_outgoing)}`
+    return `${server.host}${this.url.replace(this.checksum_incoming, checksum_outgoing)}`
   }
   // check if request is autheticated with correct checksum
   authenticated = (secret: string) => {
     const checksum = this.generate_checksum(secret)
     const ok = checksum === this.checksum_incoming
-    if (!ok) console.log(`Rejected incoming call to ${this.call}`)
     return ok
   }
   find_meeting_id = (servers: server[]): Promise<server> => {

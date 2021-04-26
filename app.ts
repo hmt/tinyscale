@@ -1,6 +1,9 @@
-import { createError, opine, ErrorRequestHandler, Router, server, createHash } from "./deps.ts";
+import { opine, ErrorRequestHandler, Router, createHash, server, createError, Color } from "./deps.ts";
 import { BBB } from './bbb.ts';
 
+const date = () => new Date().toLocaleTimeString('de')
+const VERSION = 'v1.3.0'
+console.log(date() + Color.green(` Starting tinyscale ${VERSION}`))
 // give your tinyscale server a secret so it looks like a BBB server
 const secret = Deno.env.get("TINYSCALE_SECRET") || ""
 if (!secret) throw "No secret set for tinyscale"
@@ -22,15 +25,14 @@ servers.forEach(async s => {
     if (!res.ok) throw "Connection error. Please check your host configuration"
     const body = await res.text()
     const ok = body.includes('SUCCESS')
-    console.log(`${s.host} is ${ok ? 'ok':'misconfigured. Please check your secret in servers.json'}`)
+    console.log(`${s.host} is ${ok ? Color.green('ok') : Color.red('misconfigured. Please check your secret in servers.json')}`)
     if (!ok) throw "Configuration error. Exiting …"
   } catch (e) {
     // exit tinyscale if an error is encountered in servers.json
-    console.log(e)
+    console.log(Color.brightRed(e))
     Deno.exit(1);
   }
 })
-
 // pick the next server, using an iterator to cycle through all servers available
 function get_available_server(): server {
   let candidate = iterator.next()
@@ -38,30 +40,44 @@ function get_available_server(): server {
     iterator = servers[Symbol.iterator]()
     candidate = iterator.next()
   }
-  console.log(`Using next server ${candidate.value.host}`)
+  console.log(`Using next server ${Color.green(candidate.value.host)}`)
   return candidate.value;
 }
 
 const router = Router()
 // the api itself answering to every call
-router.all("/bigbluebutton/api/:call", async (req, res, next) => {
+router.all("/:call", async (req, res, next) => {
   const handler = new BBB(req)
+  console.log(`${date()} New call to ${Color.green(handler.call)}`)
   if (!handler.authenticated(secret)) {
-    res.setStatus(401).end()
+    console.log(`${Color.red("Rejected incoming call to "+handler.call)}`)
+    next(createError(401))
     return
   }
   let server: server
   try {
     server = await handler.find_meeting_id(servers)
   } catch (e) {
-    console.log(`Found no server with Meeting ID ${handler.meeting_id}`)
+    console.log(`Found no server with Meeting ID ${Color.yellow(handler.meeting_id)}`)
     server = get_available_server()
   }
   console.log(`Redirecting to ${server.host}`)
-  res.redirect(handler.rewritten_query(server))
+  const redirect = handler.rewritten_query(server)
+  if (handler.call === 'join') {
+    res.redirect(redirect)
+  } else {
+    try {
+      const data = await fetch(redirect)
+      const body = await data.text()
+      res.set('Content-Type', 'text/xml');
+      res.send(body)
+    } catch (e) {
+      next(createError(500))
+    }
+  }
 });
 // the fake answering machine to make sure we are recognized as a proper api
-router.get("/bigbluebutton/api", (req, res, next) => {
+router.get("/", (req, res, next) => {
   console.log('sending fake xml response')
   res.set('Content-Type', 'text/xml');
   res.send(`<response>
@@ -72,13 +88,13 @@ router.get("/bigbluebutton/api", (req, res, next) => {
 
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   res.setStatus(err.status ?? 500);
-  console.log(res.status, req.originalUrl)
   res.end();
+  console.log(`${Color.red(`${res.status}`)} ${req.originalUrl}`)
 };
 
 const app = opine()
-            .use("/", router)
-            .use((req, res, next) => { next(createError(404)); })
-            .use(errorHandler);
+  .use("/bigbluebutton/api", router)
+  .use((req, res, next) => next(createError(404)))
+  .use(errorHandler);
 
 export default app;
