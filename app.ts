@@ -2,20 +2,21 @@ import { opine, ErrorRequestHandler, Router, createHash, server, createError, Co
 import { BBB } from './bbb.ts';
 
 const date = () => new Date().toLocaleTimeString('de')
-const VERSION = 'v1.4.0'
-const tinyscale_strict: boolean = Deno.env.get("TINYSCALE_STRICT") === 'true'|| '1' ? true : false
-console.log(date() + Color.green(` Starting tinyscale ${VERSION} in ${tinyscale_strict ? 'strict':'loose'} mode`))
+const VERSION = 'v1.5.0'
 // give your tinyscale server a secret so it looks like a BBB server
-const secret = Deno.env.get("TINYSCALE_SECRET") || ""
+const secret: string = Deno.env.get("TINYSCALE_SECRET") || ""
 if (!secret) throw "No secret set for tinyscale"
+const tinyscale_strict: boolean = Deno.env.get("TINYSCALE_STRICT") === 'false' ? false : true
+console.log(date() + Color.green(` Starting tinyscale ${VERSION} in ${tinyscale_strict ? 'strict':'loose'} mode`))
+console.log(`Your secret is set to ${Color.green(secret)}`)
 
 // store your BBB servers in servers.json
 const file: string = await Deno.readTextFile('servers.json')
 const servers: server[] = JSON.parse(file)
 // create an iterator so that we can treat all servers equally
 let iterator = servers[Symbol.iterator]();
-console.log(servers)
 console.log('Checking servers first …')
+console.log(servers)
 // check servers for connectivity and if the secret is correct
 servers.forEach(async s => {
   const hash = createHash("sha1");
