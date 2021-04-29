@@ -6,7 +6,7 @@ const date = () => new Date().toLocaleTimeString('de')
 
 const S = new Servers()
 await S.init()
-let queue: Record<string, Deferred<boolean>> = {}
+let queue: Record<string, Deferred<string>> = {}
 
 const router = Router()
 // if the param is call, check for races
@@ -16,10 +16,12 @@ router.param('call', async (req, res, next, call) => {
   const existing_id = queue[meeting_id]
   if (existing_id) {
     console.log(`Race pending for meeting-ID: ${Color.red(meeting_id)}`)
-    await existing_id
+    const body = await existing_id
+    res.send(body)
+  } else {
+    queue[meeting_id] = deferred<string>();
+    next()
   }
-  queue[meeting_id] = deferred<boolean>();
-  next()
 })
 // the api itself answering to every call
 router.all("/:call", async (req, res, next) => {
@@ -46,11 +48,11 @@ router.all("/:call", async (req, res, next) => {
     try {
       const data = await fetch(redirect)
       const body = await data.text()
-      if (handler.call === 'create') { queue[handler.meeting_id].resolve(true); delete queue[handler.meeting_id] }
+      if (handler.call === 'create') { queue[handler.meeting_id].resolve(body); delete queue[handler.meeting_id] }
       res.set('Content-Type', 'text/xml');
       res.send(body)
     } catch (e) {
-      if (handler.call === 'create') { queue[handler.meeting_id].resolve(false); delete queue[handler.meeting_id] }
+      if (handler.call === 'create') { queue[handler.meeting_id].resolve(e); delete queue[handler.meeting_id] }
       next(createError(500))
     }
   }
