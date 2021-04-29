@@ -10,18 +10,15 @@ let queue: Record<string, Deferred<string>> = {}
 
 const router = Router()
 // if the param is call, check for races
-router.param('call', async (req, res, next, call) => {
-  if (call !== 'create') next()
+router.all('/create', async (req, res, next) => {
   const meeting_id = req.query.meetingID
   const existing_id = queue[meeting_id]
   if (existing_id) {
     console.log(`Race pending for meeting-ID: ${Color.red(meeting_id)}`)
-    const body = await existing_id
-    res.send(body)
   } else {
     queue[meeting_id] = deferred<string>();
-    next()
   }
+  next()
 })
 // the api itself answering to every call
 router.all("/:call", async (req, res, next) => {
