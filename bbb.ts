@@ -1,4 +1,4 @@
-import { Request, ParamsDictionary,  createHash } from "./deps.ts";
+import { Request, ParamsDictionary, createHash } from "./deps.ts";
 
 export interface server { host: string; secret: string };
 export class BBB {
@@ -9,7 +9,7 @@ export class BBB {
   meeting_id: string
   url: string
 
-  constructor (req: Request<ParamsDictionary, any, any>) {
+  constructor(req: Request<ParamsDictionary, any, any>) {
     this.call = req.params.call
     this.checksum_incoming = req.query.checksum
     this.query = req._parsedUrl?.query || ""
@@ -40,10 +40,8 @@ export class BBB {
     return ok
   }
   find_meeting_id = (servers: server[]): Promise<server> => {
-    const p1 = new Promise((res) => setTimeout(() => res("p1"), 5000));
     if (!this.meeting_id) throw Error
     const promises = servers.map(async s => {
-      await p1
       const res = await fetch(this.check_for_meeting_query(s))
       if (!res.ok) throw Error
       const text = await res.text()
