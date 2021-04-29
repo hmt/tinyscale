@@ -45,11 +45,11 @@ router.all("/:call", async (req, res, next) => {
     try {
       const data = await fetch(redirect)
       const body = await data.text()
-      if (handler.call === 'create') { queue[handler.meeting_id].resolve(body); delete queue[handler.meeting_id] }
+      if (handler.call === 'create') { queue[handler.meeting_id]?.resolve(body); delete queue[handler.meeting_id] }
       res.set('Content-Type', 'text/xml');
       res.send(body)
     } catch (e) {
-      if (handler.call === 'create') { queue[handler.meeting_id].resolve(e); delete queue[handler.meeting_id] }
+      if (handler.call === 'create') { queue[handler.meeting_id]?.resolve(e); delete queue[handler.meeting_id] }
       next(createError(500))
     }
   }
