@@ -15,9 +15,9 @@ router.all('/create', async (req, res, next) => {
   const existing_id = queue[meeting_id]
   if (existing_id) {
     console.log(`Race pending for meeting-ID: ${Color.red(meeting_id)}`)
-  } else {
-    queue[meeting_id] = deferred<string>();
+    await existing_id
   }
+  queue[meeting_id] = deferred<string>();
   next()
 })
 // the api itself answering to every call
