@@ -1,5 +1,6 @@
-import { Request, ParamsDictionary,  createHash, server } from "./deps.ts";
+import { Request, ParamsDictionary,  createHash } from "./deps.ts";
 
+export interface server { host: string; secret: string };
 export class BBB {
   call: string
   checksum_incoming: string
@@ -39,8 +40,10 @@ export class BBB {
     return ok
   }
   find_meeting_id = (servers: server[]): Promise<server> => {
+    const p1 = new Promise((res) => setTimeout(() => res("p1"), 5000));
     if (!this.meeting_id) throw Error
     const promises = servers.map(async s => {
+      await p1
       const res = await fetch(this.check_for_meeting_query(s))
       if (!res.ok) throw Error
       const text = await res.text()
