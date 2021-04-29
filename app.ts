@@ -14,10 +14,10 @@ router.use((req, res, next)=> {
   next()
 });
 // check authentication via checksum
-router.use(":call", (req, res, next) => {
+router.use("/:call", (req, res, next) => {
   const handler = new BBB(req)
   const authenticated = handler.authenticated(secret)
-  console.log(`${date()} New call to ${Color.green(handler.call)} ${authenticated ? Color.red('Rejected'):''}`)
+  console.log(`${date()} New call to ${Color.green(handler.call)} ${authenticated ? '':Color.red('Rejected')}`)
   if (authenticated) { 
     res.locals.handler = handler
     next()
