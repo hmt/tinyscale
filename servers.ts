@@ -3,13 +3,11 @@ export interface server { host: string; secret: string };
 
 export class Servers {
   servers: server[]
-  iterator: IterableIterator<server>
-  current_server: server
+  iterator!: IterableIterator<server>
+  current_server!: server
 
   constructor() {
     this.servers = []
-    this.iterator = undefined as unknown as IterableIterator<server>
-    this.current_server = undefined as unknown as server
   }
   async init(): Promise<server[]> {
     // store your BBB servers in servers.json
