@@ -9,6 +9,22 @@ await S.init()
 let queue: Record<string, Deferred<string>> = {}
 
 const router = Router()
+router.use((req, res, next)=> {
+  res.set('Content-Type', 'text/xml')
+  next()
+});
+// check authentication via checksum
+router.use(":call", (req, res, next) => {
+  const handler = new BBB(req)
+  const authenticated = handler.authenticated(secret)
+  console.log(`${date()} New call to ${Color.green(handler.call)} ${authenticated ? Color.red('Rejected'):''}`)
+  if (authenticated) { 
+    res.locals.handler = handler
+    next()
+  } else {
+    next(createError(401))
+  }
+})
 // if the param is call, check for races
 router.all('/create', async (req, res, next) => {
   const meeting_id = req.query.meetingID
@@ -22,13 +38,7 @@ router.all('/create', async (req, res, next) => {
 })
 // the api itself answering to every call
 router.all("/:call", async (req, res, next) => {
-  const handler = new BBB(req)
-  console.log(`${date()} New call to ${Color.green(handler.call)}`)
-  if (!handler.authenticated(secret)) {
-    console.log(`${Color.red("Rejected incoming call to " + handler.call)}`)
-    next(createError(401))
-    return
-  }
+  const handler = res.locals.handler
   let server: server
   try {
     server = await handler.find_meeting_id(S.servers)
@@ -46,7 +56,6 @@ router.all("/:call", async (req, res, next) => {
       const data = await fetch(redirect)
       const body = await data.text()
       if (handler.call === 'create') { queue[handler.meeting_id]?.resolve(body); delete queue[handler.meeting_id] }
-      res.set('Content-Type', 'text/xml');
       res.send(body)
     } catch (e) {
       if (handler.call === 'create') { queue[handler.meeting_id]?.resolve(e); delete queue[handler.meeting_id] }
@@ -56,12 +65,7 @@ router.all("/:call", async (req, res, next) => {
 });
 // the fake answering machine to make sure we are recognized as a proper api
 router.get("/", (req, res, next) => {
-  console.log('sending fake xml response')
-  res.set('Content-Type', 'text/xml');
-  res.send(`<response>
-<returncode>SUCCESS</returncode>
-<version>2.0</version>
-</response>`);
+  res.send(`<response><returncode>SUCCESS</returncode><version>2.0</version></response>`);
 })
 
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
