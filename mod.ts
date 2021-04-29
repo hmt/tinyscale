@@ -1,5 +1,13 @@
-import app from "./app.ts";
+import { Color, secret } from './deps.ts'
 
+const date = () => new Date().toLocaleTimeString('de')
+const VERSION = 'v1.6.0'
+// give your tinyscale server a secret so it looks like a BBB server
+if (!secret) throw "No secret set for tinyscale"
+console.log(date() + Color.green(` Starting tinyscale ${VERSION}`))
+console.log(`Your secret is set to ${Color.green(secret)}`)
+
+import app from "./app.ts";
 // Get the PORT from the environment variables and store in Opine.
 const port = parseInt(Deno.env.get("PORT") ?? "3005");
 app.set("port", port);

@@ -1,75 +1,42 @@
-import { opine, ErrorRequestHandler, Router, createHash, server, createError, Color, deferred, Deferred } from "./deps.ts";
+import { opine, ErrorRequestHandler, Router, secret, createError, Color, deferred, Deferred } from "./deps.ts";
 import { BBB } from './bbb.ts';
+import { Servers, server } from './servers.ts'
 
 const date = () => new Date().toLocaleTimeString('de')
-const VERSION = 'v1.5.1'
-// give your tinyscale server a secret so it looks like a BBB server
-const secret: string = Deno.env.get("TINYSCALE_SECRET") || ""
-if (!secret) throw "No secret set for tinyscale"
-const tinyscale_strict: boolean = Deno.env.get("TINYSCALE_STRICT") === 'false' ? false : true
-console.log(date() + Color.green(` Starting tinyscale ${VERSION} in ${tinyscale_strict ? 'strict':'loose'} mode`))
-console.log(`Your secret is set to ${Color.green(secret)}`)
 
-// store your BBB servers in servers.json
-const file: string = await Deno.readTextFile('servers.json')
-const servers: server[] = JSON.parse(file)
-// create an iterator so that we can treat all servers equally
-let iterator = servers[Symbol.iterator]();
-console.log('Checking servers first …')
-console.log(servers)
-// check servers for connectivity and if the secret is correct
-servers.forEach(async s => {
-  const hash = createHash("sha1");
-  hash.update(`getMeetings${s.secret}`)
-  try {
-    // throw an error if cannot connect or if secret fails
-    const res = await fetch(`${s.host}/bigbluebutton/api/getMeetings?checksum=${hash.toString()}`)
-    if (!res.ok) throw "Connection error. Please check your host configuration"
-    const body = await res.text()
-    const ok = body.includes('SUCCESS')
-    console.log(`${s.host} is ${ok ? Color.green('ok') : Color.red('misconfigured. Please check your secret in servers.json')}`)
-    if (!ok) throw "Configuration error. Exiting …"
-  } catch (e) {
-    // exit tinyscale if an error is encountered in servers.json
-    console.log(Color.brightRed(e))
-    Deno.exit(1);
-  }
-})
-let current_server: server
-get_available_server()
-
-type waiter = Deferred<string>
-type queue = Record<string, waiter>
-let queue: queue = {}
-// pick the next server, using an iterator to cycle through all servers available
-function get_available_server(): server {
-  let candidate = iterator.next()
-  if (candidate.done) {
-    iterator = servers[Symbol.iterator]()
-    candidate = iterator.next()
-  }
-  console.log(`Using next server ${Color.green(candidate.value.host)}`)
-  current_server = candidate.value;
-  return current_server
-}
+const S = new Servers()
+await S.init()
+let queue: Record<string, Deferred<boolean>> = {}
 
 const router = Router()
+// if the param is call, check for races
+router.param('call', async (req, res, next, call) => {
+  if (call !== 'create') next()
+  const meeting_id = req.query.meetingID
+  const existing_id = queue[meeting_id]
+  if (existing_id) {
+    console.log(`Race pending for meeting-ID: ${Color.red(meeting_id)}`)
+    await existing_id
+  }
+  queue[meeting_id] = deferred<boolean>();
+  next()
+})
 // the api itself answering to every call
 router.all("/:call", async (req, res, next) => {
   const handler = new BBB(req)
   console.log(`${date()} New call to ${Color.green(handler.call)}`)
   if (!handler.authenticated(secret)) {
-    console.log(`${Color.red("Rejected incoming call to "+handler.call)}`)
+    console.log(`${Color.red("Rejected incoming call to " + handler.call)}`)
     next(createError(401))
     return
   }
   let server: server
   try {
-    server = await handler.find_meeting_id(servers)
+    server = await handler.find_meeting_id(S.servers)
   } catch (e) {
     console.log(`Found no server with Meeting ID ${Color.yellow(handler.meeting_id)}`)
-    if (handler.call === 'create' && tinyscale_strict) { get_available_server() }
-    server = current_server
+    if (handler.call === 'create') { S.get_available_server() }
+    server = S.current_server
   }
   console.log(`Redirecting to ${server.host}`)
   const redirect = handler.rewritten_query(server)
@@ -79,11 +46,11 @@ router.all("/:call", async (req, res, next) => {
     try {
       const data = await fetch(redirect)
       const body = await data.text()
-      if (handler.call === 'create') {queue[handler.meeting_id].resolve(body);delete queue[handler.meeting_id]}
+      if (handler.call === 'create') { queue[handler.meeting_id].resolve(true); delete queue[handler.meeting_id] }
       res.set('Content-Type', 'text/xml');
       res.send(body)
     } catch (e) {
-      if (handler.call === 'create') {queue[handler.meeting_id].reject(Error);delete queue[handler.meeting_id]}
+      if (handler.call === 'create') { queue[handler.meeting_id].resolve(false); delete queue[handler.meeting_id] }
       next(createError(500))
     }
   }
@@ -103,27 +70,8 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   res.end();
   console.log(`${Color.red(`${res.status}`)} ${req.originalUrl}`)
 };
-// @ts-ignore
-const check_if_create = async (req, res, next) => {
-  console.log("check if room has been called before and has not yet finished")
-  const meeting_id = req.query.meetingID
-  console.log(meeting_id)
-  const existing_id = queue[meeting_id]
-  console.log(meeting_id, existing_id)
-  if (existing_id) {
-    try {
-      const existing_res = await existing_id
-      console.log(existing_res)
-      res.send(existing_res)
-    } catch (e) { next() }
-  } else {
-    queue[meeting_id] = deferred<string>();
-    next()
-  }
-}
 
 const app = opine()
-  .use('/bigbluebutton/api/create', check_if_create)
   .use("/bigbluebutton/api", router)
   .use((req, res, next) => next(createError(404)))
   .use(errorHandler);

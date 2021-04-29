@@ -25,13 +25,11 @@ Then create a `servers.json` file like this here:
 
 Now you are ready to start the script with setting a port and a secret:
 
-    TINYSCALE_SECRET=some_secret_string deno run --allow-net --allow-read --allow-env https://deno.land/x/tinyscale@v1.5.1/mod.ts
+    TINYSCALE_SECRET=some_secret_string deno run --allow-net --allow-read --allow-env https://deno.land/x/tinyscale@v1.6.0/mod.ts
 
 tinyscale then runs on port 3005 and you will have to set up your reverse proxy so that it can pick up requests or you leave it on that port. If you prefer a different port you can set one with another env var: `PORT 3006`
 
 When started, tinyscale will connect to each server and make a single call to check if your configuration is correct. If there is a problem tinyscale will abort. If your configuration works you can start using it in your environment by replacing your existing BBB settings with the new tinyscale url in your third party apps. Make sure to also replace the BBB secrets with your new `TINYSCALE_SECRET`.
-
-If you set the additional env var `TINYSCALE_STRICT=false` tinyscale will switch servers with every call to a room that doesn't exist. This might result in a more random distribution of room creations (ymmv).
 
 tinyscale has been tested to work with NextCloud, Moodle and Greenlight.
 
