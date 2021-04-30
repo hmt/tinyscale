@@ -44,11 +44,11 @@ router.all("/:call", async (req, res, next) => {
     server = await handler.find_meeting_id(S.servers)
     res.locals.log.push(`found, ${handler.call==='join'?'redirect to':'reply with'} ${server.host}`)
   } catch (e) {
-    res.locals.log.push(`${Color.yellow("not found,")}`)
+    res.locals.log.push(`${Color.yellow("not found")},`)
     if (handler.call === 'create') {
       S.get_available_server()
       res.locals.log.push(`open new room on ${Color.green(S.current_server.host)}`);
-    }
+    } else res.locals.log.push(`reply with ${S.current_server.host}`)
     server = S.current_server
   }
   const redirect = handler.rewritten_query(server)
