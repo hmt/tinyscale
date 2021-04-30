@@ -1,10 +1,9 @@
 import { Color, secret } from './deps.ts'
 
-const date = () => new Date().toLocaleTimeString('de')
-const VERSION = 'v1.6.1'
+const VERSION = 'v1.6.2'
 // give your tinyscale server a secret so it looks like a BBB server
 if (!secret) throw "No secret set for tinyscale"
-console.log(date() + Color.green(` Starting tinyscale ${VERSION}`))
+console.log(Color.green(`Starting tinyscale ${VERSION}`))
 console.log(`Your secret is set to ${Color.green(secret)}`)
 
 import app from "./app.ts";

@@ -17,7 +17,7 @@ router.use((req, res, next)=> {
 router.use("/:call", (req, res, next) => {
   const handler = new BBB(req)
   const authenticated = handler.authenticated(secret)
-  console.log(`${date()} New call to ${Color.green(handler.call)} ${authenticated ? '':Color.red('Rejected')}`)
+  res.locals.log = [`${date()} ${Color.green(handler.call)}${authenticated ? '':Color.red(' Rejected')}`]
   if (authenticated) { 
     res.locals.handler = handler
     next()
@@ -42,12 +42,15 @@ router.all("/:call", async (req, res, next) => {
   let server: server
   try {
     server = await handler.find_meeting_id(S.servers)
+    res.locals.log.push(`found, ${handler.call==='join'?'redirect to':'reply with'} ${server.host}`)
   } catch (e) {
-    console.log(`Found no server with Meeting ID ${Color.yellow(handler.meeting_id)}`)
-    if (handler.call === 'create') { S.get_available_server() }
+    res.locals.log.push(`${Color.yellow("not found,")}`)
+    if (handler.call === 'create') {
+      S.get_available_server()
+      res.locals.log.push(`open new room on ${Color.green(S.current_server.host)}`);
+    }
     server = S.current_server
   }
-  console.log(`Redirecting to ${server.host}`)
   const redirect = handler.rewritten_query(server)
   if (handler.call === 'join') {
     res.redirect(redirect)
@@ -62,6 +65,7 @@ router.all("/:call", async (req, res, next) => {
       next(createError(500))
     }
   }
+  console.log(res.locals.log.join(' '));
 });
 // the fake answering machine to make sure we are recognized as a proper api
 router.get("/", (req, res, next) => {

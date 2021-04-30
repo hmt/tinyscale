@@ -48,7 +48,6 @@ export class Servers {
       this.iterator = this.servers[Symbol.iterator]()
       candidate = this.iterator.next()
     }
-    console.log(`Using next server ${Color.green(candidate.value.host)}`)
     this.current_server = candidate.value;
     return this.current_server
   }
