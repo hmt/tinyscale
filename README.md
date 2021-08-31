@@ -1,7 +1,5 @@
 # Tinyscale
 
-**Warning, currently tinyscale is not compatible with Deno 1.13.x due to changes in Error handling. Please use 1.12.x instead until further notice.**
-
 Depending on your requirements for BigBlueButton and your server capabilities you may need to host more than one instance of BigBlueButton to host meetings for your users. But as soon as you run more than one server you either need to split up servers for different endpoints, let's say one BBB server for Greenlight and another one for moodle, or you install a load balancer that decides for you where new meetings are set up and where users are routed to. If you only use one endpoint for all your meetings you will have to use a load balancer such as scalelite to run more than one BBB server.
 
 While scalelite is a very good load balancer it also uses a lot of resources and is somewhat complicated to set up (ymmv). Since my resources were low and I could not affort to rent yet another server to run scalelite, I created tinyscale to solve the issue of load balancing multiple BBB instances.
@@ -33,7 +31,7 @@ Then create a `servers.json` file like this here:
 
 Now you are ready to start the script. Make sure to have an environment variable called `TINYSCALE_SECRET`:
 
-    TINYSCALE_SECRET=some_secret_string deno run --allow-net --allow-read --allow-env https://deno.land/x/tinyscale@v1.6.1/mod.ts
+    TINYSCALE_SECRET=some_secret_string deno run --allow-net --allow-read --allow-env https://deno.land/x/tinyscale@v1.6.4/mod.ts
 
 tinyscale will then run on port 3005 and you will have to set up your reverse proxy so that it can pick up requests. If you prefer a different port you can set one with another env var: `PORT 3006`
 
