@@ -69,7 +69,7 @@ Then create a `servers.json` file like this here:
 Now you are ready to start the script. Make sure to have an environment variable
 called `TINYSCALE_SECRET`:
 
-    TINYSCALE_SECRET=some_secret_string deno run --allow-net --allow-read --allow-env https://deno.land/x/tinyscale@v1.6.4/mod.ts
+    TINYSCALE_SECRET=some_secret_string deno run --allow-net --allow-read --allow-env https://deno.land/x/tinyscale@v1.7.0/mod.ts
 
 tinyscale will then run on port 3005 and you will have to set up your reverse
 proxy so that it can pick up requests. If you prefer a different port you can

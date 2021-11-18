@@ -1,6 +1,5 @@
 import { createHash, Color } from "./deps.ts";
-export interface server { host: string; secret: string };
-
+import type { server } from './deps.ts'
 export class Servers {
   servers: server[]
   iterator!: IterableIterator<server>
@@ -36,7 +35,7 @@ export class Servers {
         if (!ok) throw "Configuration error. Exiting …"
       } catch (e) {
         // exit tinyscale if an error is encountered in servers.json
-        console.log(Color.brightRed(e))
+        console.log(Color.brightRed(JSON.stringify(e)))
         Deno.exit(1);
       }
     })

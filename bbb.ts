@@ -1,6 +1,6 @@
 import { Request, ParamsDictionary, createHash } from "./deps.ts";
+import type { server } from './deps.ts'
 
-export interface server { host: string; secret: string };
 export class BBB {
   call: string
   checksum_incoming: string

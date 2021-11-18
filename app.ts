@@ -1,6 +1,7 @@
-import { opine, ErrorRequestHandler, Router, secret, createError, Color, deferred, Deferred } from "./deps.ts";
+import { opine, ErrorRequestHandler, Router, secret, HttpError, Color, deferred, Deferred } from "./deps.ts";
 import { BBB } from './bbb.ts';
-import { Servers, server } from './servers.ts'
+import { Servers } from './servers.ts'
+import type { server } from './deps.ts'
 
 const date = () => new Date().toLocaleTimeString('de')
 
@@ -22,7 +23,7 @@ router.use("/:call", (req, res, next) => {
     res.locals.handler = handler
     next()
   } else {
-    next(createError(401))
+    next(new HttpError(401));
   }
 })
 // if the param is call, check for races
@@ -62,7 +63,7 @@ router.all("/:call", async (req, res, next) => {
       res.send(body)
     } catch (e) {
       if (handler.call === 'create') { queue[handler.meeting_id]?.resolve(e); delete queue[handler.meeting_id] }
-      next(createError(500))
+      next(new HttpError(500));
     }
   }
   console.log(res.locals.log.join(' '));
@@ -80,7 +81,7 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
 
 const app = opine()
   .use("/bigbluebutton/api", router)
-  .use((req, res, next) => next(createError(404)))
+  .use((req, res, next) => next(new HttpError(404)))
   .use(errorHandler);
 
 export default app;
