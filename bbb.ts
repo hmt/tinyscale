@@ -1,4 +1,4 @@
-import { Request, ParamsDictionary, createHash } from "./deps.ts";
+import { createHash } from "./deps.ts";
 import type { server } from './deps.ts'
 
 export class BBB {
@@ -9,7 +9,7 @@ export class BBB {
   meeting_id: string
   url: string
 
-  constructor(req: Request<ParamsDictionary, any, any>) {
+  constructor(req) {
     this.call = req.params.call
     this.checksum_incoming = req.query.checksum
     this.query = req._parsedUrl?.query || ""

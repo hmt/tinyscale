@@ -1,4 +1,4 @@
-import { opine, ErrorRequestHandler, Router, secret, HttpError, Color, deferred, Deferred } from "./deps.ts";
+import { opine, Router, secret, HttpError, Color, deferred, Deferred } from "./deps.ts";
 import { BBB } from './bbb.ts';
 import { Servers } from './servers.ts'
 import type { server } from './deps.ts'
@@ -73,7 +73,7 @@ router.get("/", (req, res, next) => {
   res.send(`<response><returncode>SUCCESS</returncode><version>2.0</version></response>`);
 })
 
-const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res, next) => {
   res.setStatus(err.status ?? 500);
   res.end();
   console.log(`${Color.red(`${res.status}`)} ${req.originalUrl}`)
