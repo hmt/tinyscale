@@ -15,6 +15,8 @@ if (SECRET === undefined)
 if (SERVERS.length === 0)
 	throw "There are no servers listed in `servers.json`";
 
+const date = () => new Date().toLocaleTimeString('de');
+
 class Server {
 	host: string;
 	#secret: string;
@@ -105,7 +107,7 @@ Deno.serve({ port: PORT,
 	const url = new URL(req.url);
 	const { call, params } = Server.splitURL(url);
 	const { promise, resolve } = Promise.withResolvers();
-	let log = "";
+	let log = `${date()} `;
 
 	// voicemail if just looking for a life sign from the server
 	if (url.pathname === '/bigbluebutton/api/' || url.pathname === '/bigbluebutton/')
@@ -114,7 +116,7 @@ Deno.serve({ port: PORT,
 	// check the checksum and fail if not true
 	const authenticated = await Server.checkAuthenticated(url);
 	if (!authenticated) {
-		log = red(`401: ${url.pathname}`);
+		log = log + red(`401: ${url.pathname}`);
 		return new Response("<response><returncode>FAILED</returncode><messageKey>checksumError</messageKey><message>Checksums do not match</message></response>",
 			{ status: 401, headers: { "content-type": "text/xml" } });
 	}
@@ -148,11 +150,11 @@ Deno.serve({ port: PORT,
 				break
 			}
 		}
-	log = `${green(`${call}`)} found, reply with`;
+	log = log + `${green(`${call}`)} found, reply with`;
 
 	if (call === 'create' && selectedServer === undefined && meetingID !== null) {
 		selectedServer = Server.getNextServer();
-		console.log(green('create')+' '+yellow('not found')+", opening a new room on "+green(selectedServer.host));
+		console.log(date()+' '+green('create')+' '+yellow('not found')+", opening a new room on "+green(selectedServer.host));
 		const body = await selectedServer.getResponse('create', params);
 		resolve(meetingID);
 		queue.delete(meetingID);
