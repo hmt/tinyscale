@@ -1,17 +1,18 @@
-import servers from './servers.json' with { type: 'json' };
+import SERVERS from './servers.json' with { type: 'json' };
 
 import { crypto } from "https://deno.land/std@0.224.0/crypto/mod.ts"; 
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts"
 import { red, green, yellow } from "https://deno.land/std@0.115.1/fmt/colors.ts";
 
-const secret = Deno.env.get("TINYSCALE_SECRET");
+const SECRET = Deno.env.get("TINYSCALE_SECRET");
 const _port = Deno.env.get("PORT");
-const port = _port ? parseInt(_port) : undefined;
+const PORT = _port ? parseInt(_port) : undefined;
+const VERSION = 'v2.0.0'
 
-if (secret === undefined)
+if (SECRET === undefined)
 	throw "No `TINYSCALE_SECRET` set. tinyscale will exit.";
 
-if (servers.length === 0)
+if (SERVERS.length === 0)
 	throw "There are no servers listed in `servers.json`";
 
 class Server {
@@ -33,6 +34,15 @@ class Server {
 		const call = url.pathname.slice(19);
 		const params = url.search.replace('?', '').replace(/[?&]?checksum.*$/, '');
 		return { call, params }
+	}
+
+	static async checkAuthenticated(url: URL) {
+		const checksum = url.searchParams.get('checksum');
+		if (checksum === null)
+			return false;
+		const { call, params } = Server.splitURL(url);
+		const hash = await Server.hashCreate(`${call}${params}${SECRET}`);
+		return hash === checksum;
 	}
 
 	async urlCreate(call: string, params = "") {
@@ -66,7 +76,7 @@ class Server {
 const listServer: Server[] = [];
 const queue: Map<string, Promise<unknown>> = new Map();
 
-for (const server of servers) {
+for (const server of SERVERS) {
 	const s = new Server(server.host, server.secret);
 	s.test();
 	listServer.push(s);
@@ -80,16 +90,15 @@ function getNextServer() {
 	return listServer[currentServerIndex];
 }
 
-async function checkAuthenticated(url: URL) {
-	const checksum = url.searchParams.get('checksum');
-	if (checksum === null)
-		return false;
-	const { call, params } = Server.splitURL(url);
-	const hash = await Server.hashCreate(`${call}${params}${secret}`);
-	return hash === checksum;
-}
 
-Deno.serve({ port }, async (req) => {
+Deno.serve({ port: PORT,
+	onListen({ port, hostname }) {
+		console.log(green(`Starting tinyscale ${VERSION} on Deno ${Deno.version.deno}`));
+		console.log(`Your secret is set to ${green(SECRET)}`);
+		console.log(`API available at ${green(`http://${hostname}:${port}/bigbluebutton/api/`)}`);
+		console.log();
+		console.log(`Running tests on ${SERVERS.length} host${SERVERS.length === 1 ? '':'s'}:`);
+	}}, async (req) => {
 	const url = new URL(req.url);
 	const { call, params } = Server.splitURL(url);
 	const { promise, resolve } = Promise.withResolvers();
@@ -100,7 +109,7 @@ Deno.serve({ port }, async (req) => {
 		return new Response("<response><returncode>SUCCESS</returncode><version>2.0</version></response>");
 
 	// check the checksum and fail if not true
-	const authenticated = await checkAuthenticated(url);
+	const authenticated = await Server.checkAuthenticated(url);
 	if (!authenticated) {
 		log = red(`401: ${url.pathname}`);
 		return new Response("<response><returncode>FAILED</returncode><messageKey>checksumError</messageKey><message>Checksums do not match</message></response>",

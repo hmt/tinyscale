@@ -1,10 +1,10 @@
 [
   {
-    "host": "http://bbb1.schule.de",
+    "host": "http://bbb1.schule.de/bigbluebutton/api",
     "secret": "secret_string"
   },
   {
-    "host": "http://bbb2.schule.de",
+    "host": "http://bbb2.schule.de/bigbluebutton/api",
     "secret": "secret_string"
   }
 ]
