@@ -17,7 +17,6 @@ if (servers.length === 0)
 class Server {
 	host: string;
 	#secret: string;
-	#apiPrefix: string = "/api/";
 
 	constructor(host: string, secret: string) {
 		this.host = host;
@@ -29,9 +28,16 @@ class Server {
 		return encodeHex(hash);
 	}
 
+	static splitURL(url: URL) {
+		// entferne `/bigbluebutton/api/`
+		const call = url.pathname.slice(19);
+		const params = url.search.replace('?', '').replace(/[?&]?checksum.*$/, '');
+		return { call, params }
+	}
+
 	async urlCreate(call: string, params = "") {
 		const hash = await Server.hashCreate(`${call}${params}${this.#secret}`);
-		return new URL(`${this.host}${this.#apiPrefix}${call}?${params}${params === '' ? '' : '&'}checksum=${hash}`);
+		return new URL(`${this.host}/${call}?${params}${params === '' ? '' : '&'}checksum=${hash}`);
 	}
 
 	async getResponse(query: string, params = "") {
@@ -47,22 +53,22 @@ class Server {
 		try {
 			const res = await this.getResponse('getMeetings');
 			const ok = res.includes('SUCCESS');
-			console.log(`${this.host} is ${ok ? green('ok') : red('misconfigured. Please check your secret in servers.json')}`);
 			if (!ok)
 				throw Error;
-		} catch (e) {
-			throw e;
+			console.log(`${this.host} is ${green('ok')}`);
+		} catch (_e) {
+			console.log(`${this.host} is ${red('misconfigured. Please check your secret in servers.json')}`);
+			Deno.exit(1)
 		}
 	}
 }
 
 const listServer: Server[] = [];
-const listTest = [];
 const queue: Map<string, Promise<unknown>> = new Map();
 
 for (const server of servers) {
 	const s = new Server(server.host, server.secret);
-	listTest.push(s.test());
+	s.test();
 	listServer.push(s);
 }
 
@@ -74,26 +80,23 @@ function getNextServer() {
 	return listServer[currentServerIndex];
 }
 
-await Promise.allSettled(listTest).then(list => list.forEach(res => res.status === 'rejected' && Deno.exit(1)));
-
 async function checkAuthenticated(url: URL) {
 	const checksum = url.searchParams.get('checksum');
 	if (checksum === null)
 		return false;
-	const call = url.pathname.slice(5);
-	const params = url.search.replace('?', '').replace(/[?&]?checksum.*$/, '');
+	const { call, params } = Server.splitURL(url);
 	const hash = await Server.hashCreate(`${call}${params}${secret}`);
 	return hash === checksum;
 }
 
 Deno.serve({ port }, async (req) => {
 	const url = new URL(req.url);
-	const call = url.pathname.slice(5);
+	const { call, params } = Server.splitURL(url);
 	const { promise, resolve } = Promise.withResolvers();
 	let log = "";
 
 	// voicemail if just looking for a life sign from the server
-	if (url.pathname === '/' || url.pathname === '/api/')
+	if (url.pathname === '/bigbluebutton/api/' || url.pathname === '/bigbluebutton/')
 		return new Response("<response><returncode>SUCCESS</returncode><version>2.0</version></response>");
 
 	// check the checksum and fail if not true
@@ -118,7 +121,7 @@ Deno.serve({ port }, async (req) => {
 			queue.set(meetingID, promise);
 		}
 		for (const server of listServer) {
-			const meetings = await server.getResponse('getMeetings')
+			const meetings = await server.getResponse('getMeetings');
 			if (meetings.includes(meetingID)) {
 				selectedServer = server;
 				break;
@@ -127,13 +130,14 @@ Deno.serve({ port }, async (req) => {
 	}
 	else if (recordingID !== null)
 		for (const server of listServer) {
-			const recordings = await server.getResponse('getRecordings')
-			if (recordings.includes(recordingID))
+			const recordings = await server.getResponse('getRecordings');
+			if (recordings.includes(recordingID)) {
 				selectedServer = server;
+				break
+			}
 		}
 	log = `${green(`${call}`)} found, reply with`;
 
-	const params = url.search.replace('?', '').replace(/[?&]?checksum.*$/, '');
 	if (call === 'create' && selectedServer === undefined && meetingID !== null) {
 		selectedServer = getNextServer();
 		console.log(green('create')+' '+yellow('not found')+", opening a new room on "+green(selectedServer.host));
