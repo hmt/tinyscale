@@ -18,10 +18,25 @@ if (SERVERS.length === 0)
 class Server {
 	host: string;
 	#secret: string;
+	static listServer: Server[] = [];
+
+	static #currentServerIndex = 0;
+
+	static get currentServer() {
+		return Server.listServer[Server.#currentServerIndex];
+	}
 
 	constructor(host: string, secret: string) {
 		this.host = host;
 		this.#secret = secret;
+		this.test().then(_ => Server.listServer.push(this)).catch(_ => Deno.exit(1));
+	}
+
+  static getNextServer() {
+		Server.#currentServerIndex++;
+		if (Server.#currentServerIndex === Server.listServer.length)
+			Server.#currentServerIndex = 0;
+		return Server.listServer[Server.#currentServerIndex];
 	}
 
 	static async hashCreate(params: string) {
@@ -66,30 +81,18 @@ class Server {
 			if (!ok)
 				throw Error;
 			console.log(`${this.host} is ${green('ok')}`);
-		} catch (_e) {
+		} catch (e) {
 			console.log(`${this.host} is ${red('misconfigured. Please check your secret in servers.json')}`);
-			Deno.exit(1)
+			throw e;
 		}
 	}
 }
 
-const listServer: Server[] = [];
 const queue: Map<string, Promise<unknown>> = new Map();
 
 for (const server of SERVERS) {
-	const s = new Server(server.host, server.secret);
-	s.test();
-	listServer.push(s);
+	new Server(server.host, server.secret);
 }
-
-let currentServerIndex = 0;
-function getNextServer() {
-	currentServerIndex++;
-	if (currentServerIndex === listServer.length)
-		currentServerIndex = 0;
-	return listServer[currentServerIndex];
-}
-
 
 Deno.serve({ port: PORT,
 	onListen({ port, hostname }) {
@@ -129,7 +132,7 @@ Deno.serve({ port: PORT,
 			}
 			queue.set(meetingID, promise);
 		}
-		for (const server of listServer) {
+		for (const server of Server.listServer) {
 			const meetings = await server.getResponse('getMeetings');
 			if (meetings.includes(meetingID)) {
 				selectedServer = server;
@@ -138,7 +141,7 @@ Deno.serve({ port: PORT,
 		}
 	}
 	else if (recordingID !== null)
-		for (const server of listServer) {
+		for (const server of Server.listServer) {
 			const recordings = await server.getResponse('getRecordings');
 			if (recordings.includes(recordingID)) {
 				selectedServer = server;
@@ -148,7 +151,7 @@ Deno.serve({ port: PORT,
 	log = `${green(`${call}`)} found, reply with`;
 
 	if (call === 'create' && selectedServer === undefined && meetingID !== null) {
-		selectedServer = getNextServer();
+		selectedServer = Server.getNextServer();
 		console.log(green('create')+' '+yellow('not found')+", opening a new room on "+green(selectedServer.host));
 		const body = await selectedServer.getResponse('create', params);
 		resolve(meetingID);
@@ -159,7 +162,7 @@ Deno.serve({ port: PORT,
 		queue.delete(meetingID);
 	}
 	if (selectedServer === undefined)
-		selectedServer = listServer[currentServerIndex];
+		selectedServer = Server.currentServer;
 	log = log + ' ' + selectedServer.host;
 	console.log(log);
 
