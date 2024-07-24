@@ -35,7 +35,7 @@ class Server {
 		this.test().then(_ => Server.listServer.push(this)).catch(_ => Deno.exit(1));
 	}
 
-  static getNextServer() {
+	static getNextServer() {
 		Server.#currentServerIndex++;
 		if (Server.#currentServerIndex === Server.listServer.length)
 			Server.#currentServerIndex = 0;
