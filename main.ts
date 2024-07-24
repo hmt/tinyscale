@@ -7,14 +7,13 @@ import { red, green, yellow } from "@std/fmt/colors";
 const SECRET = Deno.env.get("TINYSCALE_SECRET");
 const _port = Deno.env.get("PORT");
 const PORT = _port ? parseInt(_port) : undefined;
-const VERSION = 'v2.0.0'
+const VERSION = 'v2.0.1'
 
 if (SECRET === undefined)
 	throw "No `TINYSCALE_SECRET` set. tinyscale will exit.";
 
 if (SERVERS.length === 0)
 	throw "There are no servers listed in `servers.json`";
-SERVERS.forEach(server => new Server(server.host, server.secret));
 
 const date = () => new Date().toLocaleTimeString('de');
 const queue: Map<string, Promise<unknown>> = new Map();
@@ -92,6 +91,7 @@ class Server {
 	}
 }
 
+SERVERS.forEach(server => new Server(server.host, server.secret));
 
 Deno.serve({ port: PORT,
 	onListen({ port, hostname }) {
