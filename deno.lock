@@ -1,0 +1,29 @@
+{
+  "version": "3",
+  "packages": {
+    "specifiers": {
+      "jsr:@std/crypto@^1.0.1": "jsr:@std/crypto@1.0.1",
+      "jsr:@std/encoding@^1.0.1": "jsr:@std/encoding@1.0.1",
+      "jsr:@std/fmt@^0.225.6": "jsr:@std/fmt@0.225.6"
+    },
+    "jsr": {
+      "@std/crypto@1.0.1": {
+        "integrity": "5d60e6412b2ce61193e2bb622cba02d34890b3d8c4eef3312e499a77329a6f94"
+      },
+      "@std/encoding@1.0.1": {
+        "integrity": "5955c6c542ebb4ce6587c3b548dc71e07a6c27614f1976d1d3887b1196cf4e65"
+      },
+      "@std/fmt@0.225.6": {
+        "integrity": "aba6aea27f66813cecfd9484e074a9e9845782ab0685c030e453a8a70b37afc8"
+      }
+    }
+  },
+  "remote": {},
+  "workspace": {
+    "dependencies": [
+      "jsr:@std/crypto@^1.0.1",
+      "jsr:@std/encoding@^1.0.1",
+      "jsr:@std/fmt@^0.225.6"
+    ]
+  }
+}

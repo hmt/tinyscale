@@ -1,8 +1,8 @@
 import SERVERS from './servers.json' with { type: 'json' };
 
-import { crypto } from "https://deno.land/std@0.224.0/crypto/mod.ts"; 
-import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts"
-import { red, green, yellow } from "https://deno.land/std@0.115.1/fmt/colors.ts";
+import { crypto } from "@std/crypto"; 
+import { encodeHex } from "@std/encoding"
+import { red, green, yellow } from "@std/fmt/colors";
 
 const SECRET = Deno.env.get("TINYSCALE_SECRET");
 const _port = Deno.env.get("PORT");
@@ -14,8 +14,10 @@ if (SECRET === undefined)
 
 if (SERVERS.length === 0)
 	throw "There are no servers listed in `servers.json`";
+SERVERS.forEach(server => new Server(server.host, server.secret));
 
 const date = () => new Date().toLocaleTimeString('de');
+const queue: Map<string, Promise<unknown>> = new Map();
 
 class Server {
 	host: string;
@@ -50,7 +52,7 @@ class Server {
 		// entferne `/bigbluebutton/api/`
 		const call = url.pathname.slice(19);
 		const params = url.search.replace('?', '').replace(/[?&]?checksum.*$/, '');
-		return { call, params }
+		return { call, params };
 	}
 
 	static async checkAuthenticated(url: URL) {
@@ -90,11 +92,6 @@ class Server {
 	}
 }
 
-const queue: Map<string, Promise<unknown>> = new Map();
-
-for (const server of SERVERS) {
-	new Server(server.host, server.secret);
-}
 
 Deno.serve({ port: PORT,
 	onListen({ port, hostname }) {
@@ -111,7 +108,7 @@ Deno.serve({ port: PORT,
 
 	// voicemail if just looking for a life sign from the server
 	if (url.pathname === '/bigbluebutton/api/' || url.pathname === '/bigbluebutton/')
-		return new Response("<response><returncode>SUCCESS</returncode><version>2.0</version></response>");
+		return new Response("<response><returncode>SUCCESS</returncode><version>2.0</version></response>", { headers: { "content-type": "text/xml" } });
 
 	// check the checksum and fail if not true
 	const authenticated = await Server.checkAuthenticated(url);
