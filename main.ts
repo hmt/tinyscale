@@ -7,7 +7,7 @@ import { red, green, yellow } from "@std/fmt/colors";
 const SECRET = Deno.env.get("TINYSCALE_SECRET");
 const _port = Deno.env.get("PORT");
 const PORT = _port ? parseInt(_port) : undefined;
-const VERSION = 'v2.0.1'
+const VERSION = 'v2.0.2'
 
 if (SECRET === undefined)
 	throw "No `TINYSCALE_SECRET` set. tinyscale will exit.";
